@@ -13,19 +13,19 @@ use lithium\util\String;
 
 /**
  * The `Resource` class enables RESTful routing in Lithium.
- * 
- * The `Resource` class acts as a more high-level interface to the `Route` class 
+ *
+ * The `Resource` class acts as a more high-level interface to the `Route` class
  * and takes care of instantiating the appropriate routes for a given resource.
- * 
- * 
+ *
+ *
  * In your `routes.php` file you can connect a resource in its simplest form like this:
- * 
+ *
  * {{{
  * Router::resource('Posts');
  * }}}
- * 
+ *
  * This will automatically generate this CRUD routes for you (output similar to `li3 route`):
- * 
+ *
  * {{{
  * /posts(.{:type:\w+})*                               	    {"controller":"posts","action":"index"}
  * /posts/{:id:[0-9a-f]{24}|[0-9]+}(.{:type:\w+})*        	{"controller":"posts","action":"show"}
@@ -35,11 +35,11 @@ use lithium\util\String;
  * /posts/{:id:[0-9a-f]{24}|[0-9]+}(.{:type:\w+})*       	{"controller":"posts","action":"update"}
  * /posts/{:id:[0-9a-f]{24}|[0-9]+}(.{:type:\w+})*       	{"controller":"posts","action":"delete"}
  * }}}
- * 
- * This routes look complex in the first place, but they try to be as flexible as possible. You can pass 
+ *
+ * This routes look complex in the first place, but they try to be as flexible as possible. You can pass
  * all default ids (both MongoDB and for relational databases) and always an optional type (like `json`).
  * With the default resource activated, you can use the following URIs.
- * 
+ *
  * {{{
  * GET /posts or /posts.json => Show a list of available posts
  * GET /posts/1234 or /posts/1234.json => Show the post with the ID 1234
@@ -49,13 +49,13 @@ use lithium\util\String;
  * PUT /posts/1234 or /posts/1234.json => Edit the post with the ID 1234 (has the form data attached)
  * DELETE /posts/1234 or /posts/1234.json => Deletes the post with the ID 1234
  * }}}
- * 
- * If you wonder why there is no POST http method included, here's the reason: in a classical 
- * RESTful design, POST is used to create a new sub-resource (and this plugin currently does not 
- * support sub-resources out of the box). If you use the helpers that come with this plugin, you 
- * should not notice any difference as they handle the http methods for you. Just keep this in mind 
+ *
+ * If you wonder why there is no POST http method included, here's the reason: in a classical
+ * RESTful design, POST is used to create a new sub-resource (and this plugin currently does not
+ * support sub-resources out of the box). If you use the helpers that come with this plugin, you
+ * should not notice any difference as they handle the http methods for you. Just keep this in mind
  * when you test your web services with CURL.
- * 
+ *
  */
 class Resource extends \lithium\core\Object {
 
@@ -75,11 +75,11 @@ class Resource extends \lithium\core\Object {
 	 */
 	protected static $_types = array(
 		'index' => array(
-			'template' => '/{:resource}(.{:type:\w+})*',
+			'template' => '/{:resource}*',
 			'params' => array('http:method' => 'GET')
 		),
 		'show' => array(
-			'template' => '/{:resource}/{:id:[0-9a-f]{24}|[0-9]+}(.{:type:\w+})*',
+			'template' => '/{:resource}/{:id:[0-9a-f]{24}|[0-9]+}*',
 			'params' => array('http:method' => 'GET')
 		),
 		'add' => array(
@@ -87,19 +87,19 @@ class Resource extends \lithium\core\Object {
 			'params' => array('http:method' => 'GET')
 		),
 		'create' => array(
-			'template' => '/{:resource}(.{:type:\w+})*',
-			'params' => array('http:method' => 'PUT')
+			'template' => '/{:resource}*',
+			'params' => array('http:method' => 'POST')
 		),
 		'edit' => array(
 			'template' => '/{:resource}/{:id:[0-9a-f]{24}|[0-9]+}/edit',
 			'params' => array('http:method' => 'GET')
 		),
 		'update' => array(
-			'template' => '/{:resource}/{:id:[0-9a-f]{24}|[0-9]+}(.{:type:\w+})*',
+			'template' => '/{:resource}/{:id:[0-9a-f]{24}|[0-9]+}*',
 			'params' => array('http:method' => 'PUT')
 		),
 		'delete' => array(
-			'template' => '/{:resource}/{:id:[0-9a-f]{24}|[0-9]+}(.{:type:\w+})*',
+			'template' => '/{:resource}/{:id:[0-9a-f]{24}|[0-9]+}*',
 			'params' => array('http:method' => 'DELETE')
 		)
 	);
@@ -116,7 +116,7 @@ class Resource extends \lithium\core\Object {
 		}
 		if (isset($config['types'])) {
 			static::$_types = $config['types'] + static::$_types;
-		}	
+		}
 	}
 
 	/**
@@ -131,8 +131,14 @@ class Resource extends \lithium\core\Object {
 			$types = $options['types'] + $types;
 		}
 
+		$exclude = isset($options['exclude']) ? $options['exclude'] : array();
+
 		$routes = array();
 		foreach(static::$_types as $action => $params) {
+			if (in_array($action, $exclude)) {
+				continue;
+			}
+
 			$config = array(
 				'template' => String::insert($params['template'], array('resource' => $resource)),
 				'params' => $params['params'] + array('controller' => $resource, 'action' => $action),

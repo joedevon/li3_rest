@@ -8,35 +8,15 @@
 
 namespace li3_rest\tests\cases\net\http;
 
-use lithium\action\Request;
-use lithium\net\http\Route;
-use li3_rest\net\http\Router;
 use li3_rest\net\http\Resource;
-use lithium\action\Response;
 
-class RouterTest extends \lithium\test\Unit {
-
-	protected $_routes = array();
-
-	public function setUp() {
-		$this->_routes = Router::get();
-		Router::reset();
-	}
-
-	public function tearDown() {
-		Router::reset();
-
-		foreach ($this->_routes as $route) {
-			Router::connect($route);
-		}
-	}
+class ResourceTest extends \lithium\test\Unit {
 
 	public function testResource() {
-		Router::resource('Posts');
+		$routes = Resource::connect('Posts');
 		$resource = Resource::config();
 		$types = $resource['types'];
 		$typeKeys = array_keys($types);
-		$routes = Router::get();
 
 		$this->assertEqual(count($types), count($routes));
 
@@ -45,6 +25,26 @@ class RouterTest extends \lithium\test\Unit {
 			$route = $routes[$i]->export();
 			$this->assertEqual(str_replace('{:resource}', 'posts', $type['template']), $route['template']);
 			$this->assertEqual($type['params']['http:method'], $route['meta']['http:method']);
+		}
+	}
+
+	public function testExcludedResources() {
+		$resource = Resource::config();
+		$types = $resource['types'];
+		$typeKeys = array_keys($types);
+
+		// randomly exclude one
+		$options = array('exclude' => array('delete'));
+		$routes = Resource::connect('Posts', $options);
+		$routeCount = count($routes);
+
+		$this->assertEqual((count($types)-1), $routeCount);
+
+		// make sure it did not get included
+		for($i = 0; $i < $routeCount; $i++) {
+			$type = $types['delete'];
+			$route = $routes[$i]->export();
+			$this->assertNotEqual('DELETE', $route['meta']['http:method']);
 		}
 	}
 
