@@ -131,8 +131,14 @@ class Resource extends \lithium\core\Object {
 			$types = $options['types'] + $types;
 		}
 
+		$exclude = isset($options['exclude']) ? $options['exclude'] : array();
+
 		$routes = array();
 		foreach(static::$_types as $action => $params) {
+			if (in_array($action, $exclude)) {
+				continue;
+			}
+
 			$config = array(
 				'template' => String::insert($params['template'], array('resource' => $resource)),
 				'params' => $params['params'] + array('controller' => $resource, 'action' => $action),
