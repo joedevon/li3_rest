@@ -19,7 +19,6 @@ class RouterTest extends \lithium\test\Unit {
 	protected $_routes = array();
 
 	public function setUp() {
-		$this->request = new Request();
 		$this->_routes = Router::get();
 		Router::reset();
 	}
